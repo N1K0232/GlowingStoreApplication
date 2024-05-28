@@ -1,0 +1,15 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\GlowingStoreApplication.Authentication\GlowingStoreApplication.Authentication.csproj" />
+    <ProjectReference Include="..\GlowingStoreApplication.Contracts\GlowingStoreApplication.Contracts.csproj" />
+    <ProjectReference Include="..\GlowingStoreApplication.Shared\GlowingStoreApplication.Shared.csproj" />
+  </ItemGroup>
+
+</Project>
