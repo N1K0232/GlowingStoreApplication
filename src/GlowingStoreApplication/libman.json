@@ -1,0 +1,38 @@
+{
+    "version": "1.0",
+    "defaultProvider": "cdnjs",
+    "libraries": [
+        {
+            "library": "twitter-bootstrap@5.3.3",
+            "destination": "wwwroot/lib/bootstrap"
+        },
+        {
+            "library": "bootstrap-icons@1.11.3",
+            "destination": "wwwroot/lib/bootstrap-icons"
+        },
+        {
+            "library": "jquery@3.7.1",
+            "destination": "wwwroot/lib/jquery"
+        },
+        {
+            "library": "font-awesome@6.5.2",
+            "destination": "wwwroot/lib/fontawesome"
+        },
+        {
+            "library": "fontawesome-iconpicker@3.2.0",
+            "destination": "wwwroot/lib/fontawesome-icons"
+        },
+        {
+            "library": "alpinejs@3.14.0",
+            "destination": "wwwroot/lib/alpinejs"
+        },
+        {
+            "library": "marked@12.0.2",
+            "destination": "wwwroot/lib/marked"
+        },
+        {
+            "library": "material-ui@4.12.4",
+            "destination": "wwwroot/lib/material-ui"
+        }
+    ]
+}
