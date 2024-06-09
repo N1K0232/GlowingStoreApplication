@@ -33,6 +33,10 @@
         {
             "library": "material-ui@4.12.4",
             "destination": "wwwroot/lib/material-ui"
+        },
+        {
+            "library": "boxicons@2.1.4",
+            "destination": "wwwroot/lib/box-icons"
         }
     ]
 }
