@@ -1,10 +1,13 @@
 using System.Diagnostics;
+using System.Net.Mime;
 using System.Text;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using GlowingStoreApplication.Authentication;
 using GlowingStoreApplication.Authentication.Entities;
 using GlowingStoreApplication.Authentication.Handlers;
 using GlowingStoreApplication.Authentication.Requirements;
+using GlowingStoreApplication.BusinessLayer.Diagnostics.HealthChecks;
 using GlowingStoreApplication.BusinessLayer.Services;
 using GlowingStoreApplication.BusinessLayer.Services.Interfaces;
 using GlowingStoreApplication.BusinessLayer.Settings;
@@ -12,9 +15,11 @@ using GlowingStoreApplication.BusinessLayer.StartupServices;
 using GlowingStoreApplication.DataAccessLayer;
 using GlowingStoreApplication.Exceptions;
 using GlowingStoreApplication.Extensions;
+using GlowingStoreApplication.StorageProviders;
 using GlowingStoreApplication.Swagger;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Options;
@@ -26,6 +31,7 @@ using OperationResults.AspNetCore.Http;
 using Serilog;
 using TinyHelpers.AspNetCore.Extensions;
 using TinyHelpers.AspNetCore.Swagger;
+using TinyHelpers.Extensions;
 using TinyHelpers.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -55,6 +61,10 @@ void ConfigureServices(IServiceCollection services, IConfiguration configuration
 
     services.AddExceptionHandler<DefaultExceptionHandler>();
     services.AddRazorPages();
+
+    services.AddHealthChecks().AddCheck<SqlConnectionHealthCheck>("sql")
+        .AddDbContextCheck<AuthenticationDbContext>("identity")
+        .AddDbContextCheck<ApplicationDbContext>("database");
 
     services.ConfigureHttpJsonOptions(options =>
     {
@@ -136,6 +146,24 @@ void ConfigureServices(IServiceCollection services, IConfiguration configuration
     })
     .AddEntityFrameworkStores<AuthenticationDbContext>()
     .AddDefaultTokenProviders();
+
+    var azureStorageConnectionString = configuration.GetConnectionString("AzureStorageConnection");
+    if (azureStorageConnectionString.HasValue() && appSettings.ContainerName.HasValue())
+    {
+        services.AddAzureStorage(options =>
+        {
+            options.ConnectionString = azureStorageConnectionString;
+            options.ContainerName = appSettings.ContainerName;
+        });
+    }
+    else
+    {
+        services.AddFileSystemStorage(options =>
+        {
+            options.SiteRootFolder = environment.ContentRootPath ?? AppContext.BaseDirectory;
+            options.StorageFolder = appSettings.StorageFolder;
+        });
+    }
 
     services.AddAuthentication(options =>
     {
@@ -244,5 +272,27 @@ void Configure(IApplicationBuilder app, IWebHostEnvironment environment, IServic
     {
         endpoints.MapEndpoints();
         endpoints.MapRazorPages();
+        endpoints.MapHealthChecks("/status", new HealthCheckOptions
+        {
+            ResponseWriter = async (context, report) =>
+            {
+                var result = JsonSerializer.Serialize(
+                new
+                {
+                    status = report.Status.ToString(),
+                    duration = report.TotalDuration.TotalMilliseconds,
+                    details = report.Entries.Select(entry => new
+                    {
+                        service = entry.Key,
+                        status = entry.Value.Status.ToString(),
+                        description = entry.Value.Description,
+                        exception = entry.Value.Exception?.Message,
+                    })
+                });
+
+                context.Response.ContentType = MediaTypeNames.Application.Json;
+                await context.Response.WriteAsync(result);
+            }
+        });
     });
 }
