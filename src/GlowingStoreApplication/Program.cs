@@ -1,13 +1,26 @@
 using System.Diagnostics;
+using System.Text;
 using System.Text.Json.Serialization;
+using GlowingStoreApplication.Authentication;
+using GlowingStoreApplication.Authentication.Entities;
+using GlowingStoreApplication.Authentication.Handlers;
+using GlowingStoreApplication.Authentication.Requirements;
+using GlowingStoreApplication.BusinessLayer.Services;
+using GlowingStoreApplication.BusinessLayer.Services.Interfaces;
 using GlowingStoreApplication.BusinessLayer.Settings;
+using GlowingStoreApplication.BusinessLayer.StartupServices;
 using GlowingStoreApplication.Exceptions;
 using GlowingStoreApplication.Extensions;
 using GlowingStoreApplication.Swagger;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.Net.Http.Headers;
 using Microsoft.OpenApi.Models;
-using MinimalHelpers.OpenApi;
+using MinimalHelpers.Routing;
 using OperationResults.AspNetCore.Http;
 using TinyHelpers.AspNetCore.Extensions;
 using TinyHelpers.AspNetCore.Swagger;
@@ -24,6 +37,7 @@ await app.RunAsync();
 void ConfigureServices(IServiceCollection services, IConfiguration configuration, IWebHostEnvironment environment, IHostBuilder host)
 {
     var appSettings = services.ConfigureAndGet<AppSettings>(configuration, nameof(AppSettings));
+    var jwtSettings = services.ConfigureAndGet<JwtSettings>(configuration, nameof(JwtSettings));
     var swaggerSettings = services.ConfigureAndGet<SwaggerSettings>(configuration, nameof(SwaggerSettings));
 
     services.AddRequestLocalization(appSettings.SupportedCultures);
@@ -70,11 +84,97 @@ void ConfigureServices(IServiceCollection services, IConfiguration configuration
                 Version = swaggerSettings.Version
             });
 
+            options.AddSecurityDefinition(JwtBearerDefaults.AuthenticationScheme, new OpenApiSecurityScheme
+            {
+                In = ParameterLocation.Header,
+                Description = "Insert JWT token with the \"Bearer \" prefix",
+                Name = HeaderNames.Authorization,
+                Type = SecuritySchemeType.ApiKey
+            });
+
+            options.AddSecurityRequirement(new OpenApiSecurityRequirement
+            {
+                {
+                    new OpenApiSecurityScheme
+                    {
+                        Reference = new OpenApiReference
+                        {
+                            Type = ReferenceType.SecurityScheme,
+                            Id = JwtBearerDefaults.AuthenticationScheme
+                        }
+                    },
+                    Array.Empty<string>()
+                }
+            });
+
             options.AddDefaultResponse();
             options.AddAcceptLanguageHeader();
-            options.AddFormFile();
         });
     }
+
+    services.AddSqlServer<AuthenticationDbContext>(configuration.GetConnectionString("SqlConnection"));
+    services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
+    {
+        options.Lockout.MaxFailedAccessAttempts = 3;
+        options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(10);
+        options.User.RequireUniqueEmail = true;
+        options.Password.RequireNonAlphanumeric = true;
+        options.Password.RequiredLength = 8;
+        options.Password.RequireDigit = true;
+        options.Password.RequireUppercase = true;
+        options.Password.RequireLowercase = true;
+    })
+    .AddEntityFrameworkStores<AuthenticationDbContext>()
+    .AddDefaultTokenProviders();
+
+    services.AddAuthentication(options =>
+    {
+        options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+        options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    })
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.SecurityKey)),
+            ValidateIssuer = true,
+            ValidIssuer = jwtSettings.Issuer,
+            ValidateAudience = true,
+            ValidAudience = jwtSettings.Audience,
+            ValidateLifetime = true,
+            RequireExpirationTime = true,
+            ClockSkew = TimeSpan.Zero
+        };
+    });
+
+    services.AddScoped<IAuthorizationHandler, UserActiveHandler>();
+    services.AddAuthorization(options =>
+    {
+        var policyBuilder = new AuthorizationPolicyBuilder().RequireAuthenticatedUser();
+        policyBuilder.Requirements.Add(new UserActiveRequirement());
+
+        options.DefaultPolicy = policyBuilder.Build();
+
+        options.AddPolicy("Administrator", policy =>
+        {
+            policy.RequireAuthenticatedUser();
+            policy.RequireRole(RoleNames.Administrator, RoleNames.PowerUser);
+            policy.Requirements.Add(new UserActiveRequirement());
+        });
+
+        options.AddPolicy("UserActive", policy =>
+        {
+            policy.RequireAuthenticatedUser();
+            policy.RequireRole(RoleNames.User);
+            policy.Requirements.Add(new UserActiveRequirement());
+        });
+    });
+
+    services.AddScoped<IIdentityService, IdentityService>();
+    services.AddScoped<IAuthenticatedService, AuthenticatedService>();
+
+    services.AddHostedService<IdentityRoleService>();
 }
 
 void Configure(IApplicationBuilder app, IWebHostEnvironment environment, IServiceProvider services)
@@ -122,8 +222,12 @@ void Configure(IApplicationBuilder app, IWebHostEnvironment environment, IServic
         });
     }
 
+    app.UseAuthentication();
+    app.UseAuthorization();
+
     app.UseEndpoints(endpoints =>
     {
+        endpoints.MapEndpoints();
         endpoints.MapRazorPages();
     });
 }

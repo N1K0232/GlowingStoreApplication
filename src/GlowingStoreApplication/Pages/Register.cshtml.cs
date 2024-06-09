@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace GlowingStoreApplication.Pages;
 
-public class IndexModel : PageModel
+public class RegisterModel : PageModel
 {
     public void OnGet()
     {

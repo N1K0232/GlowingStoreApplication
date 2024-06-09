@@ -1,10 +1,43 @@
 ﻿@page
+
 @model IndexModel
+
 @{
     ViewData["Title"] = "Home page";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<div class="login" x-data="auth">
+    <div class="text-center wrapper">
+        <form x-on:submit.prevent>
+            <div class="col-auto input-box">
+                <input type="text" x-model="userName" placeholder="UserName" />
+                <i class="bx bxs-user"></i>
+            </div>
+            <div class="col-auto mt-2 input-box">
+                <input type="password" x-model="password" placeholder="Password" />
+                <i class="bx bxs-lock-alt"></i>
+            </div>
+            <div class="remember-forgot">
+                <label><input type="checkbox" x-model="isPersistent" />Remember me</label>
+                <a href="/ResetPassword">Forgot password?</a>
+            </div>
+            <div class="col-auto mt-3">
+                <button class="btn" type="submit" x-on:click="login()" x-bind:disabled="invalidLoginForm() || isBusy">Login</button>
+            </div>
+            <div class="col-auto mt-2">
+                <button class="btn" type="submit" x-on:click="clear()" x-bind:disabled="invalidLoginForm() || isBusy">Cancel</button>
+            </div>
+            <div class="register-link">
+                <p>Don't you have an account? <a href="/Register">Register</a></p>
+            </div>
+        </form>
+    </div>
 </div>
+
+@section Scripts {
+    <script>
+        document.addEventListener("alpine:init", () => {
+            auth('@Thread.CurrentThread.CurrentCulture.TwoLetterISOLanguageName');
+        });
+    </script>
+}
