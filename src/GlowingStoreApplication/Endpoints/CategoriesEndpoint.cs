@@ -14,7 +14,7 @@ public class CategoriesEndpoint : IEndpointRouteHandlerBuilder
         var categoriesApiGroup = endpoints.MapGroup("/api/categories");
 
         categoriesApiGroup.MapDelete("{id:guid}", DeleteAsync)
-            .AllowAnonymous()
+            .RequireAuthorization("Administrator")
             .Produces(StatusCodes.Status204NoContent)
             .Produces(StatusCodes.Status400BadRequest)
             .Produces(StatusCodes.Status401Unauthorized)
@@ -23,7 +23,7 @@ public class CategoriesEndpoint : IEndpointRouteHandlerBuilder
             .WithOpenApi();
 
         categoriesApiGroup.MapGet("{id:guid}", GetAsync)
-            .AllowAnonymous()
+            .RequireAuthorization("UserActive")
             .WithName("GetCategory")
             .Produces<Category>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status401Unauthorized)
@@ -32,6 +32,7 @@ public class CategoriesEndpoint : IEndpointRouteHandlerBuilder
             .WithOpenApi();
 
         categoriesApiGroup.MapGet(string.Empty, GetListAsync)
+            .RequireAuthorization("UserActive")
             .Produces<IEnumerable<Category>>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status400BadRequest)
             .Produces(StatusCodes.Status401Unauthorized)
@@ -39,6 +40,7 @@ public class CategoriesEndpoint : IEndpointRouteHandlerBuilder
             .WithOpenApi();
 
         categoriesApiGroup.MapPost(string.Empty, InsertAsync)
+            .RequireAuthorization("Administrator")
             .Produces<Category>(StatusCodes.Status201Created)
             .Produces(StatusCodes.Status400BadRequest)
             .Produces(StatusCodes.Status401Unauthorized)
@@ -49,6 +51,7 @@ public class CategoriesEndpoint : IEndpointRouteHandlerBuilder
             .WithOpenApi();
 
         categoriesApiGroup.MapPut("{id:guid}", UpdateAsync)
+            .RequireAuthorization("Administrator")
             .Produces<Category>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status400BadRequest)
             .Produces(StatusCodes.Status401Unauthorized)
