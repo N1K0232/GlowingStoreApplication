@@ -12,7 +12,10 @@ public static class QueryableExtensions
             return false;
         }
 
-        var list = await source.Skip(pageIndex * itemsPerPage).Take(itemsPerPage + 1).ToListAsync(cancellationToken);
+        var skip = Skip(pageIndex, itemsPerPage);
+        var take = Take(itemsPerPage);
+
+        var list = await source.Skip(skip).Take(take).ToListAsync(cancellationToken);
         return list.Count > itemsPerPage;
     }
 
@@ -34,4 +37,8 @@ public static class QueryableExtensions
 
         return totalPages;
     }
+
+    private static int Skip(int pageIndex, int itemsPerPage) => pageIndex * itemsPerPage;
+
+    private static int Take(int itemsPerPage) => itemsPerPage + 1;
 }

@@ -63,11 +63,14 @@ public class ProductService : IProductService
             query = query.Where(p => p.Name.Contains(searchText));
         }
 
+        var skip = Skip(pageIndex, itemsPerPage);
+        var take = Take(itemsPerPage);
+
         var totalCount = await query.LongCountAsync();
         var totalPages = await query.TotalPagesAsync(itemsPerPage);
 
         var hasNextPage = await query.HasNextPageAsync(pageIndex, itemsPerPage);
-        var dbProducts = await query.OrderBy(orderBy).Skip(pageIndex * itemsPerPage).Take(itemsPerPage + 1).ToListAsync();
+        var dbProducts = await query.OrderBy(orderBy).Skip(skip).Take(take).ToListAsync();
 
         var products = mapper.Map<IEnumerable<Product>>(dbProducts).Take(itemsPerPage);
         return new ListResult<Product>(products, totalCount, totalPages, hasNextPage);
@@ -115,4 +118,8 @@ public class ProductService : IProductService
 
         return Result.Fail(FailureReasons.ItemNotFound, "Product not found", $"No product found with id {id}");
     }
-}
+
+<    private static int Skip(int pageIndex, int itemsPerPage) => pageIndex * itemsPerPage;
+
+    private static int Take(int itemsPerPage) => itemsPerPage + 1;
+>}
