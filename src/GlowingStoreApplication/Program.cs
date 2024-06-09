@@ -3,6 +3,8 @@ using System.Net.Mime;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using FluentValidation;
+using FluentValidation.AspNetCore;
 using GlowingStoreApplication.Authentication;
 using GlowingStoreApplication.Authentication.Entities;
 using GlowingStoreApplication.Authentication.Handlers;
@@ -12,6 +14,7 @@ using GlowingStoreApplication.BusinessLayer.Mapping;
 using GlowingStoreApplication.BusinessLayer.Services;
 using GlowingStoreApplication.BusinessLayer.Settings;
 using GlowingStoreApplication.BusinessLayer.StartupServices;
+using GlowingStoreApplication.BusinessLayer.Validations;
 using GlowingStoreApplication.DataAccessLayer;
 using GlowingStoreApplication.Exceptions;
 using GlowingStoreApplication.Extensions;
@@ -87,6 +90,12 @@ void ConfigureServices(IServiceCollection services, IConfiguration configuration
     });
 
     services.AddAutoMapper(typeof(ImageMapperProfile).Assembly);
+    services.AddValidatorsFromAssemblyContaining<SaveCategoryRequestValidator>();
+
+    services.AddFluentValidationAutoValidation(options =>
+    {
+        options.DisableDataAnnotationsValidation = true;
+    });
 
     services.AddOperationResult(options =>
     {
