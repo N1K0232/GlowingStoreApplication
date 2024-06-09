@@ -23,6 +23,7 @@ using Microsoft.Net.Http.Headers;
 using Microsoft.OpenApi.Models;
 using MinimalHelpers.Routing;
 using OperationResults.AspNetCore.Http;
+using Serilog;
 using TinyHelpers.AspNetCore.Extensions;
 using TinyHelpers.AspNetCore.Swagger;
 using TinyHelpers.Json.Serialization;
@@ -37,6 +38,11 @@ await app.RunAsync();
 
 void ConfigureServices(IServiceCollection services, IConfiguration configuration, IWebHostEnvironment environment, IHostBuilder host)
 {
+    host.UseSerilog((hostingContext, loggerConfiguration) =>
+    {
+        loggerConfiguration.ReadFrom.Configuration(hostingContext.Configuration);
+    });
+
     var appSettings = services.ConfigureAndGet<AppSettings>(configuration, nameof(AppSettings));
     var jwtSettings = services.ConfigureAndGet<JwtSettings>(configuration, nameof(JwtSettings));
     var swaggerSettings = services.ConfigureAndGet<SwaggerSettings>(configuration, nameof(SwaggerSettings));
@@ -228,6 +234,11 @@ void Configure(IApplicationBuilder app, IWebHostEnvironment environment, IServic
 
     app.UseAuthentication();
     app.UseAuthorization();
+
+    app.UseSerilogRequestLogging(options =>
+    {
+        options.IncludeQueryInRequestPath = true;
+    });
 
     app.UseEndpoints(endpoints =>
     {
