@@ -9,6 +9,7 @@ using GlowingStoreApplication.BusinessLayer.Services;
 using GlowingStoreApplication.BusinessLayer.Services.Interfaces;
 using GlowingStoreApplication.BusinessLayer.Settings;
 using GlowingStoreApplication.BusinessLayer.StartupServices;
+using GlowingStoreApplication.DataAccessLayer;
 using GlowingStoreApplication.Exceptions;
 using GlowingStoreApplication.Extensions;
 using GlowingStoreApplication.Swagger;
@@ -111,6 +112,9 @@ void ConfigureServices(IServiceCollection services, IConfiguration configuration
             options.AddAcceptLanguageHeader();
         });
     }
+
+    services.AddSqlServer<ApplicationDbContext>(configuration.GetConnectionString("SqlConnection"));
+    services.AddScoped<IApplicationDbContext>(services => services.GetRequiredService<ApplicationDbContext>());
 
     services.AddSqlServer<AuthenticationDbContext>(configuration.GetConnectionString("SqlConnection"));
     services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
