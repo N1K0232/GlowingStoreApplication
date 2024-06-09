@@ -7,6 +7,10 @@ namespace GlowingStoreApplication.DataAccessLayer;
 
 public class ApplicationDbContext : AuthenticationDbContext, IApplicationDbContext
 {
+    private static readonly MethodInfo setQueryFilterOnDeletableEntity = typeof(ApplicationDbContext)
+        .GetMethods(BindingFlags.Instance | BindingFlags.NonPublic)
+        .Single(t => t.IsGenericMethod && t.Name == nameof(SetQueryFilterOnDeletableEntity));
+
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options)
     {
     }
@@ -96,6 +100,37 @@ public class ApplicationDbContext : AuthenticationDbContext, IApplicationDbConte
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
+
+        var entities = modelBuilder.Model.GetEntityTypes()
+            .Where(t => typeof(BaseEntity).IsAssignableFrom(t.ClrType)).ToList();
+
+        foreach (var type in entities.Select(t => t.ClrType))
+        {
+            var methods = SetGlobalQueryFiltersMethod(type);
+            foreach (var method in methods)
+            {
+                var genericMethod = method.MakeGenericMethod(type);
+                genericMethod.Invoke(this, [modelBuilder]);
+            }
+        }
+
         base.OnModelCreating(modelBuilder);
+    }
+
+    private static IEnumerable<MethodInfo> SetGlobalQueryFiltersMethod(Type type)
+    {
+        var methods = new List<MethodInfo>();
+
+        if (typeof(DeletableEntity).IsAssignableFrom(type))
+        {
+            methods.Add(setQueryFilterOnDeletableEntity);
+        }
+
+        return methods;
+    }
+
+    private void SetQueryFilterOnDeletableEntity<T>(ModelBuilder modelBuilder) where T : DeletableEntity
+    {
+        modelBuilder.Entity<T>().HasQueryFilter(x => !x.IsDeleted && x.DeletedDate == null);
     }
 }
