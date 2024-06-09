@@ -53,6 +53,12 @@ public class FileSystemStorageProvider : IStorageProvider
             }
         }
 
+        var directoryName = Path.GetDirectoryName(fullPath);
+        if (!string.IsNullOrWhiteSpace(directoryName) && !Directory.Exists(directoryName))
+        {
+            Directory.CreateDirectory(directoryName);
+        }
+
         using var outputStream = new FileStream(fullPath, FileMode.CreateNew, FileAccess.Write);
         stream.Position = 0;
 
