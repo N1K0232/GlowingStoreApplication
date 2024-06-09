@@ -8,8 +8,8 @@ using GlowingStoreApplication.Authentication.Entities;
 using GlowingStoreApplication.Authentication.Handlers;
 using GlowingStoreApplication.Authentication.Requirements;
 using GlowingStoreApplication.BusinessLayer.Diagnostics.HealthChecks;
+using GlowingStoreApplication.BusinessLayer.Mapping;
 using GlowingStoreApplication.BusinessLayer.Services;
-using GlowingStoreApplication.BusinessLayer.Services.Interfaces;
 using GlowingStoreApplication.BusinessLayer.Settings;
 using GlowingStoreApplication.BusinessLayer.StartupServices;
 using GlowingStoreApplication.DataAccessLayer;
@@ -26,6 +26,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.Net.Http.Headers;
 using Microsoft.OpenApi.Models;
+using MinimalHelpers.OpenApi;
 using MinimalHelpers.Routing;
 using OperationResults.AspNetCore.Http;
 using Serilog;
@@ -85,6 +86,8 @@ void ConfigureServices(IServiceCollection services, IConfiguration configuration
         };
     });
 
+    services.AddAutoMapper(typeof(ImageMapperProfile).Assembly);
+
     services.AddOperationResult(options =>
     {
         options.ErrorResponseFormat = ErrorResponseFormat.List;
@@ -126,6 +129,7 @@ void ConfigureServices(IServiceCollection services, IConfiguration configuration
 
             options.AddDefaultResponse();
             options.AddAcceptLanguageHeader();
+            options.AddFormFile();
         });
     }
 
@@ -209,8 +213,10 @@ void ConfigureServices(IServiceCollection services, IConfiguration configuration
         });
     });
 
-    services.AddScoped<IIdentityService, IdentityService>();
-    services.AddScoped<IAuthenticatedService, AuthenticatedService>();
+    services.Scan(scan => scan.FromAssemblyOf<IdentityService>()
+        .AddClasses(classes => classes.InNamespaceOf<IdentityService>())
+        .AsImplementedInterfaces()
+        .WithScopedLifetime());
 
     services.AddHostedService<IdentityRoleService>();
 }

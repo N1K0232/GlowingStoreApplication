@@ -69,6 +69,7 @@
     <Build Include="dbo\Tables\AspNetUserRoles.sql" />
     <Build Include="dbo\Tables\AspNetUserTokens.sql" />
     <Build Include="dbo\Tables\AspNetUsers.sql" />
+    <Build Include="dbo\Tables\Images.sql" />
   </ItemGroup>
   <ItemGroup>
     <None Include="GlowingStoreApplication.Database.publish.xml" />
