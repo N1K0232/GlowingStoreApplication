@@ -16,6 +16,8 @@ public class ImagesEndpoint : IEndpointRouteHandlerBuilder
         imagesApiGroup.MapDelete("{id:guid}", DeleteAsync)
             .RequireAuthorization("Administrator")
             .Produces(StatusCodes.Status204NoContent)
+            .Produces(StatusCodes.Status401Unauthorized)
+            .Produces(StatusCodes.Status403Forbidden)
             .Produces(StatusCodes.Status404NotFound)
             .WithOpenApi();
 
@@ -23,6 +25,8 @@ public class ImagesEndpoint : IEndpointRouteHandlerBuilder
             .WithName("GetImage")
             .RequireAuthorization("UserActive")
             .Produces<Image>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status401Unauthorized)
+            .Produces(StatusCodes.Status403Forbidden)
             .Produces(StatusCodes.Status404NotFound)
             .WithOpenApi();
 
@@ -30,11 +34,15 @@ public class ImagesEndpoint : IEndpointRouteHandlerBuilder
             .RequireAuthorization("UserActive")
             .Produces<IEnumerable<Image>>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status401Unauthorized)
+            .Produces(StatusCodes.Status403Forbidden)
             .WithOpenApi();
 
         imagesApiGroup.MapGet("{id:guid}/content", ReadAsync)
             .RequireAuthorization("UserActive")
             .Produces(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status401Unauthorized)
+            .Produces(StatusCodes.Status403Forbidden)
             .Produces(StatusCodes.Status404NotFound)
             .WithOpenApi();
 
@@ -42,6 +50,8 @@ public class ImagesEndpoint : IEndpointRouteHandlerBuilder
             .RequireAuthorization("Administrator")
             .Accepts<FormFileContent>(MediaTypeNames.Multipart.FormData)
             .Produces<Image>(StatusCodes.Status201Created)
+            .Produces(StatusCodes.Status401Unauthorized)
+            .Produces(StatusCodes.Status403Forbidden)
             .Produces(StatusCodes.Status400BadRequest)
             .WithOpenApi();
     }
