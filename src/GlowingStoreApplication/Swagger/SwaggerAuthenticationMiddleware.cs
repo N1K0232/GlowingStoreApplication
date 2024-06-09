@@ -28,7 +28,8 @@ public class SwaggerAuthenticationMiddleware
             if (authenticationHeader?.StartsWith("Basic ") ?? false)
             {
                 var header = AuthenticationHeaderValue.Parse(authenticationHeader);
-                var credentials = Encoding.UTF8.GetString(Convert.FromBase64String(header.Parameter)).Split(':', count: 2);
+                var parameter = Convert.FromBase64String(header.Parameter);
+                var credentials = Encoding.UTF8.GetString(parameter).Split(':', count: 2);
 
                 var userName = credentials.ElementAtOrDefault(0);
                 var password = credentials.ElementAtOrDefault(1);
