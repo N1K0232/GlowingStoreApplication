@@ -1,34 +1,47 @@
 ﻿function me(language) {
     Alpine.data("me", () => ({
-        user: {
-            firstName: '',
-            lastName: '',
-            email: ''
-        },
+
+        firstName: '',
+        lastName: '',
+        email: '',
+        isBusy: false,
 
         reset: function () {
-            this.user = {};
+            this.firstName = '';
+            this.lastName = '';
+            this.email = '';
+            this.isBusy = false;
         },
 
         get: async function () {
-            var accessToken = window.localStorage.getItem('access_token');
-            var response = await fetch('api/me', {
-                method: "GET",
-                headers: {
-                    "Content-type": "application/json",
-                    "Accept-Language": language,
-                    "Authorization": `bearer ${accessToken}`
+
+            this.isBusy = true;
+
+            try {
+                var accessToken = window.localStorage.getItem('access_token');
+                var response = await fetch('api/me', {
+                    method: "GET",
+                    headers: {
+                        "Content-type": "application/json",
+                        "Accept-Language": language,
+                        "Authorization": `bearer ${accessToken}`
+                    }
+                });
+
+                var content = await response.json();
+                var errorMessage = GetErrorMessage(response.status, content);
+
+                if (errorMessage == null) {
+                    alert(`Welcome ${content.firstName} ${content.lastName}`);
                 }
-            });
-
-            var content = await response.json();
-            var errorMessage = GetErrorMessage(response.status, content);
-
-            if (errorMessage == null) {
-                alert(`Welcome ${content.firstName} ${content.lastName}`);
+                else {
+                    alert(errorMessage);
+                }
+            } catch (error) {
+                alert(error);
             }
-            else {
-                alert(errorMessage);
+            finally {
+                this.isBusy = true;
             }
         }
     }))

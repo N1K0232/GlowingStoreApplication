@@ -51,6 +51,7 @@
 
                 if (errorMessage == null) {
                     window.localStorage.setItem('access_token', content.accessToken);
+                    window.location.href = '/HomePage';
                 }
                 else {
                     alert(errorMessage);
