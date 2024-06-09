@@ -119,7 +119,7 @@ public class ProductService : IProductService
         return Result.Fail(FailureReasons.ItemNotFound, "Product not found", $"No product found with id {id}");
     }
 
-<    private static int Skip(int pageIndex, int itemsPerPage) => pageIndex * itemsPerPage;
+    private static int Skip(int pageIndex, int itemsPerPage) => pageIndex * itemsPerPage;
 
     private static int Take(int itemsPerPage) => itemsPerPage + 1;
->}
+}
